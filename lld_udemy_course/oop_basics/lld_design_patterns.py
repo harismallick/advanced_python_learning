@@ -36,7 +36,7 @@ print(basket_total)
 
 # All the logic for tax calculation is contained in a separate function.
 
-# Program to an interface, not an implementation example:
+# "Program to an interface, not an implementation" example:
 
 from abc import ABC, abstractmethod
 
@@ -75,3 +75,24 @@ sms_alert.notify_user("555-0199", "Server is back up!")
 
 # AlertSystem doesn't care about what messaging system is being used
 # as long as the system has a send() method.
+
+
+## Check if __dict__ works for retrieving private attributes of a class instance
+
+class Person:
+    def __init__(self, name: str, age: int, hobby: str):
+        self.name = name
+        self.__age = age
+        self.hobby = hobby
+
+    @property
+    def get_age(self) -> int:
+        return self.__age
+        
+test_person = Person("John", 35, "Tennis")
+print(test_person.get_age)
+print(test_person.__dict__)
+# {'name': 'John', '_Person__age': 35, 'hobby': 'Tennis'}
+
+# Double underscore triggers name mangling in Python.
+# Use single underscore to 'hint' to others that _age is a private attribute.
