@@ -974,3 +974,776 @@ it harder to comprehend.
 
 **Decorator is a structural design pattern that lets you attach new behaviors to objects by placing these objects inside special wrapper objects that contain the behaviors.**
 
+- What if you want to extend the functionality of a class and use all the extended funtionality at the same time?
+- This is not possible with inheritance. Need to use *aggregation* or *composition*.
+
+```
+Inheritance is static. You can’t alter the behavior of an existing
+object at runtime. You can only replace the whole object with
+another one that’s created from a different subclass.
+
+Subclasses can have just one parent class. In most languages,
+inheritance doesn’t let a class inherit behaviors of multiple
+classes at the same time.
+
+One of the ways to overcome these caveats is by using Aggregation 
+or Composition instead of Inheritance. Both of the alternatives 
+work almost the same way: one object has a reference
+to another and delegates it some work.
+```
+- Multiple decorators can be stacked on top of eachother.
+- The **order** of the stacking matters!
+- If you have a wrapper to compress a file, then encrypt it, then the original object needs to be wrapped in the compression wrapper *first*, then the compression wrapped object needs to be wrapped in the encryption wrapper.
+- For loading the file, the process would be in reverse: The decryption wrapper first, then the decompression wrapper, then the contents of the original file object can be loaded.
+
+#### Structure
+
+![image](./images/s6-4-01.png)
+
+1. The Component declares the common interface for both wrappers and wrapped objects.
+2. Concrete Component is a class of objects being wrapped. It defines the basic behavior, which can be altered by decorators.
+3. The Base Decorator class has a field for referencing a wrapped object. The field’s type should be declared as the component interface so it can contain both concrete components and decorators. The base decorator delegates all operations to the wrapped object.
+4. Concrete Decorators define extra behaviors that can be added to components dynamically. Concrete decorators override methods of the base decorator and execute their behavior either before or after calling the parent method.
+5. **The Client** can wrap components in multiple layers of decorators, as long as it works with all objects via the component interface.
+
+
+#### When to use decorator pattern
+
+```
+Use the Decorator pattern when you need to be able to assign
+extra behaviors to objects at runtime without breaking the
+code that uses these objects.
+
+Use the pattern when it’s awkward or not possible to extend
+an object’s behavior using inheritance.
+```
+
+#### Pros and cons
+
+```
+Pros
+
+You can extend an object’s behavior without making a new subclass.
+
+You can add or remove responsibilities from an object at runtime.
+
+You can combine several behaviors by wrapping an object into multiple decorators.
+
+Single Responsibility Principle. You can divide a monolithic class that implements many possible variants of behavior into several smaller classes.
+
+Cons
+
+It’s hard to remove a specific wrapper from the wrappers stack.
+
+It’s hard to implement a decorator in such a way that its behavior doesn’t depend on the order in the decorators stack.
+
+The initial configuration code of layers might look pretty ugly.
+```
+
+### 5. Facade
+
+**Facade is a structural design pattern that provides a simplified interface to a library, a framework, or any other complex set of classes.**
+
+```
+A facade is a class that provides a simple interface to a com-
+plex subsystem which contains lots of moving parts. A facade
+might provide limited functionality in comparison to working
+with the subsystem directly. However, it includes only those
+features that clients really care about.
+
+Having a facade is handy when you need to integrate your
+app with a sophisticated library that has dozens of features,
+but you just need a tiny bit of its functionality.
+```
+
+#### Structure
+
+![image](./images/s6-5-01.png)
+
+1. The Facade provides convenient access to a particular part of the subsystem’s functionality. It knows where to direct the client’s request and how to operate all the moving parts.
+2. An Additional Facade class can be created to prevent polluting a single facade with unrelated features that might make it yet another complex structure. Additional facades can be used by both clients and other facades.
+3. The Complex Subsystem consists of dozens of various objects. To make them all do something meaningful, you have to dive deep into the subsystem’s implementation details, such as initializing objects in the correct order and supplying them with data in the proper format.
+4. The Client uses the facade instead of calling the subsystem objects directly.
+
+```
+The subsystem doesn't know of the existence of the facade.
+```
+
+#### When to use facade
+
+```
+Use the Facade pattern when you need to have a limited but
+straightforward interface to a complex subsystem.
+
+Use the Facade when you want to structure a subsystem into
+layers.
+```
+
+#### Pros and cons
+
+```
+Pros
+You can isolate your code from the complexity of a subsystem.
+
+Cons
+A facade can become a god object coupled to all classes of an app.
+```
+
+### 6. Flyweight
+
+**Flyweight is a structural design pattern that lets you fit more objects into the available amount of RAM by sharing common parts of state between multiple objects instead of keeping all of the data in each object.**
+
+```
+This constant data of an object is usually called the intrinsic
+state. It lives within the object; other objects can only read it,
+not change it. The rest of the object’s state, often altered “from
+the outside” by other objects, is called the extrinsic state.
+
+The Flyweight pattern suggests that you stop storing the
+extrinsic state inside the object. Instead, you should pass this
+state to specific methods which rely on it. Only the intrinsic
+state stays within the object, letting you reuse it in different
+contexts.
+
+Flyweight and immutability
+
+Since the same flyweight object can be used in different con-
+texts, you have to make sure that its state can’t be modified.
+A flyweight should initialize its state just once, via constructor
+parameters. It shouldn’t expose any setters or public fields to
+other objects.
+
+Flyweight differs from singleton in a key way: the state of the singleton object is mutable.
+Flyweight object state is immutable, because its a common resource to be used by multiple contexts.
+```
+
+![image](./images/s6-6-01.png)
+
+```
+The Flyweight pattern is merely an optimization. Before apply-
+ing it, make sure your program does have the RAM consump-
+tion problem related to having a massive number of similar
+objects in memory at the same time. Make sure that this prob-
+lem can’t be solved in any other meaningful way.
+```
+
+1. The Flyweight class contains the portion of the original
+object’s state that can be shared between multiple objects. The
+same flyweight object can be used in many different contexts.
+The state stored inside a flyweight is called intrinsic. The state
+passed to the flyweight’s methods is called extrinsic.
+
+2. The Context class contains the extrinsic state, unique across
+all original objects. When a context is paired with one of the
+flyweight objects, it represents the full state of the original
+object.
+
+3. Usually, the behavior of the original object remains in the fly-
+weight class. In this case, whoever calls a flyweight’s method
+must also pass appropriate bits of the extrinsic state into the
+method’s parameters.
+
+4. The Client calculates or stores the extrinsic state of flyweights.
+From the client’s perspective, a flyweight is a template object
+which can be *configured at runtime* by passing some contextual data into parameters of its methods.
+
+5. The Flyweight Factory manages a pool of existing flyweights.
+With the factory, clients don’t create flyweights directly.
+Instead, they call the factory, passing it bits of the intrinsic
+state of the desired flyweight. The factory looks over previ-
+ously created flyweights and either returns an existing one
+that matches search criteria or creates a new one if nothing
+is found.
+
+#### When to use flyweight
+
+```
+Use the Flyweight pattern only when your program must support 
+a huge number of objects which barely fit into available RAM.
+```
+
+#### Pros and cons
+
+```
+Pros
+
+You can save lots of RAM, assuming your program has tons of similar objects.
+
+Cons
+
+You might be trading RAM over CPU cycles when some of the context data needs to be recalculated each time somebody calls a flyweight method.
+
+The code becomes much more complicated. New team members will always be wondering why the state of an entity was separated in such a way.
+```
+
+### 7. Proxy
+
+**Proxy is a structural design pattern that lets you provide a substitute or placeholder for another object. A proxy controls access to the original object, allowing you to perform something either before or after the request gets through to the original object.**
+
+#### Structure
+
+![image](./images/s6-7-01.png)
+
+1. The **Service Interface** declares the interface of the Service. The
+proxy must follow this interface to be able to disguise itself as
+a service object.
+
+2. The **Service** is a class that provides some useful business logic.
+
+3. The **Proxy** class has a reference field that points to a service
+object. After the proxy finishes its processing (e.g., lazy ini-
+tialization, logging, access control, caching, etc.), it passes the
+request to the service object. Usually, proxies manage the full
+lifecycle of their service objects.
+
+4. The **Client** should work with both services and proxies via the
+same interface. This way you can pass a proxy into any code
+that expects a service object.
+
+```
+In the decorator pattern, the client manages the wrappers and the source object.
+In the proxy pattern, the proxy manages the entire lifecycle of the composed object.
+```
+
+#### When to use proxy pattern
+
+```
+Lazy initialization (virtual proxy). This is when you have a
+heavyweight service object that wastes system resources by
+being always up, even though you only need it from time
+to time.
+
+Access control (protection proxy). This is when you want only
+specific clients to be able to use the service object; for
+instance, when your objects are crucial parts of an operating
+system and clients are various launched applications (includ-
+ing malicious ones).
+
+Local execution of a remote service (remote proxy). This is
+when the service object is located on a remote server.
+
+Logging requests (logging proxy). This is when you want to
+keep a history of requests to the service object.
+
+Caching request results (caching proxy). This is when you need
+to cache results of client requests and manage the life cycle of
+this cache, especially if results are quite large.
+
+Smart reference. This is when you need to be able to dismiss a
+heavyweight object once there are no clients that use it.
+```
+
+#### Pros and Cons
+
+```
+Pros
+
+You can control the service object without clients knowing about it.
+
+You can manage the lifecycle of the service object when clients don’t care about it.
+
+The proxy works even if the service object isn’t ready or is not available.
+
+Open/Closed Principle. You can introduce new proxies without changing the service or clients.
+
+Cons
+
+The code may become more complicated since you need to introduce a lot of new classes.
+
+The response from the service might get delayed.
+```
+
+## Section 7: Behavioural Design Pattern
+
+Ten behavioural patterns are discussed in this book:
+
+1. Chain of Responsibility: Lets you pass requests along a chain of handlers. Upon receiving a request, each handler decides either to process the request or to pass it to the next handler in the chain.
+2. Command: Turns a request into a stand-alone object that contains all information about the request. This transformation lets you pass requests as a method arguments, delay or queue a request's execution, and support undoable operations.
+3. Iterator: Lets you traverse elements of a collection without exposing its underlying representation (list, stack, tree, etc.).
+4. Mediator: The pattern restricts direct communications between the objects and forces them to collaborate only via a mediator object.
+5. Memento: Lets you save and restore the previous state of an object without revealing the details of its implementation.
+6. Observer: Lets you define a subscription mechanism to notify multiple objects about any events that happen to the object they're observing.
+7. State: Lets an object alter its behavior when its internal state changes. It appears as if the object changed its class.
+8. Strategy: Lets you define a family of algorithms, put each of them into a separate class, and make their objects interchangeable.
+9. Template Method: Defines the skeleton of an algorithm in the superclass but lets subclasses override specific steps of the algorithm without changing its structure.
+10. Lets you separate algorithms from the objects on which they operate.
+
+### 1. Chain of Responsibility
+
+- Its a form of orchestration.
+- Each check/task in the chain is performed by a handler.
+- Each handler has a reference to the next handler in the chain.
+- Any handler can stop the chain of execution if its criteria is not met.
+- Also, a request can make it through the complete CoR, without being handled, so this outcome must be accounted for.
+
+#### Structure
+
+![image](./images/s7-1-01.png)
+
+1. The Handler declares the interface, common for all concrete
+handlers. It usually contains just a single method for handling
+requests, but sometimes it may also have another method for
+setting the next handler on the chain.
+
+2. The Base Handler is an optional class where you can put the
+boilerplate code that’s common to all handler classes.
+
+3. Concrete Handlers contain the actual code for processing
+requests. Upon receiving a request, each handler must decide
+whether to process it and, additionally, whether to pass it
+along the chain.
+
+```
+Handlers are usually self-contained and immutable, accepting
+all necessary data just once via the constructor.
+```
+4. The Client may compose chains just once or compose them
+dynamically, depending on the application’s logic. Note that
+a request can be sent to any handler in the chain—it doesn’t
+have to be the first one.
+
+
+#### When to use CoR
+
+```
+Use the Chain of Responsibility pattern when your program
+is expected to process different kinds of requests in various
+ways, but the exact types of requests and their sequences are
+unknown beforehand.
+
+Use the pattern when it’s essential to execute several handlers
+in a particular order.
+
+Use the CoR pattern when the set of handlers and their order
+are supposed to change at runtime.
+```
+
+#### Pros and Cons
+
+```
+Pros:
+You can control the order of request handling.
+
+Single Responsibility Principle. You can decouple classes that invoke operations from classes that perform operations.
+
+Open/Closed Principle. You can introduce new handlers into the app without breaking the existing client code.
+
+Cons:
+Some requests may end up unhandled.
+```
+
+### 2. Command Pattern
+
+- Passing commands around as objects.
+- Command objects contain a single execute() method to run the command.
+- For complex commands, a receiver object can be set up.
+- These receiver objects is passed into the ComplexCommand for command execution.
+- The client configures the commands and sends them to the Sender object.
+- Thus, the client doesn't interact with the system directly.
+
+```
+Command objects serve as links between various GUI and busi-
+ness logic objects. From now on, the GUI object doesn’t need
+to know what business logic object will receive the request
+and how it’ll be processed. The GUI object just triggers the
+command, which handles all the details.
+```
+
+![image](./images/s7-2-01.png)
+
+#### Structure
+
+![image](./images/s7-2-02.png)
+
+1. The Sender class (aka invoker) is responsible for initiating
+requests. This class must have a field for storing a reference to
+a command object. The sender triggers that command instead
+of sending the request directly to the receiver. Note that the
+sender isn’t responsible for creating the command object. Usu-
+ally, it gets a pre-created command from the client via the
+constructor.
+
+2. The Command interface usually declares just a single method
+for executing the command.
+
+3. Concrete Commands implement various kinds of requests. A
+concrete command isn’t supposed to perform the work on its
+own, but rather to pass the call to one of the business logic
+objects. However, for the sake of simplifying the code, these
+classes can be merged.
+
+```
+Parameters required to execute a method on a receiving object
+can be declared as fields in the concrete command. You can
+make command objects immutable by only allowing the ini-
+tialization of these fields via the constructor.
+```
+
+4. The Receiver class contains some business logic. Almost any
+object may act as a receiver. Most commands only handle the
+details of how a request is passed to the receiver, while the
+receiver itself does the actual work.
+
+5. The **Client** creates and configures concrete command objects.
+The client must pass all of the request parameters, including
+a receiver instance, into the command’s constructor. After that,
+the resulting command may be associated with one or multi-
+ple senders.
+
+#### When to use the command pattern
+
+```
+Use the Command pattern when you want to parameterize objects with operations.
+
+Use the Command pattern when you want to queue operations, schedule their execution, or execute them remotely.
+
+Use the Command pattern when you want to implement reversible operations.
+```
+
+#### Pros and Cons
+
+```
+Pros:
+
+Single Responsibility Principle. You can decouple classes that invoke operations from classes that perform these operations.
+
+Open/Closed Principle. You can introduce new commands into the app without breaking existing client code.
+
+You can implement undo/redo. 
+
+You can implement deferred execution of operations.
+
+You can assemble a set of simple commands into a complex one.
+
+Cons:
+
+The code may become more complicated since you’re introducing a whole new layer between senders and receivers.
+```
+
+### 3. Iterator
+
+**Iterator is a behavioral design pattern that lets you traverse elements of a collection without exposing its underlying representation (list, stack, tree, etc.).**
+
+```
+The main idea of the Iterator pattern is to extract the traversal
+behavior of a collection into a separate object called an iterator.
+
+In addition to implementing the algorithm itself, an iterator
+object encapsulates all of the traversal details, such as the
+current position and how many elements are left till the end.
+
+Because of this, several iterators can go through the same collection 
+at the same time, independently of each other.
+```
+
+#### Structure
+
+![image](./images/s7-3-01.png)
+
+1. The Iterator interface declares the operations required for tra-
+versing a collection: fetching the next element, retrieving the
+current position, restarting iteration, etc.
+
+2. Concrete Iterators implement specific algorithms for travers-
+ing a collection. The iterator object should track the traversal
+progress on its own. This allows several iterators to traverse
+the same collection independently of each other.
+
+3. The Collection interface declares one or multiple methods for
+getting iterators compatible with the collection. Note that the
+return type of the methods must be declared as the iterator
+interface so that the concrete collections can return various
+kinds of iterators.
+
+4. Concrete Collections return new instances of a particular con-
+crete iterator class each time the client requests one.
+
+5. The Client works with both collections and iterators via their
+interfaces. This way the client isn’t coupled to concrete classes, 
+allowing you to use various collections and iterators with
+the same client code.
+
+
+#### When to use the iterator pattern
+
+```
+Use the Iterator pattern when your collection has a complex
+data structure under the hood, but you want to hide its com-
+plexity from clients (either for convenience or security
+reasons).
+
+Use the pattern to reduce duplication of the traversal code
+across your app.
+
+Use the Iterator when you want your code to be able to tra-
+verse different data structures or when types of these struc-
+tures are unknown beforehand.
+```
+
+#### Pros and Cons
+
+```
+Pros
+
+Single Responsibility Principle. You can clean up the client code and the collections by extracting bulky traversal algorithms into separate classes.
+
+Open/Closed Principle. You can implement new types of collections and iterators and pass them to existing code without breaking anything.
+
+You can iterate over the same collection in parallel because each iterator object contains its own iteration state.
+
+For the same reason, you can delay an iteration and continue it when needed.
+
+Cons
+
+Applying the pattern can be an overkill if your app only works with simple collections.
+
+Using an iterator may be less efficient than going through elements of some specialized collections directly.
+```
+
+### 4. Mediator Pattern
+
+**The pattern restricts direct communications between the objects and forces them to collaborate only via a mediator object.**
+
+- The fewer dependencies a class has, the easier it becomes to modify, extend or reuse that class.
+- Therefore, this pattern is built on the principle of eliminating coupling between component classes and mediating their communication via a mediator.
+- If a standard communication interface is established, then mediators can be plugged in and out.
+
+![image](./images/s7-4-01.png)
+
+1. Components are various classes that contain some business logic. Each component has a reference to a mediator, declared with the type of the mediator interface. **The component isn’t aware of the actual class of the mediator, so you can reuse the component in other programs by linking it to a different mediator.**
+2. The Mediator interface declares methods of communication
+with components, which usually include just a single notifica-
+tion method. Components may pass any context as arguments
+of this method, including their own objects, but only in such a
+way that no coupling occurs between a receiving component
+and the sender’s class.
+
+3. Concrete Mediators encapsulate relations between various
+components. Concrete mediators often keep references to all
+components they manage and sometimes even manage their
+lifecycle.
+
+4. Components must not be aware of other components. If some-
+thing important happens within or to a component, it must
+only notify the mediator. When the mediator receives the noti-
+fication, it can easily identify the sender, which might be just
+enough to decide what component should be triggered in
+return.
+
+#### When to implement mediator
+
+```
+Use the Mediator pattern when it’s hard to change some of the
+classes because they are tightly coupled to a bunch of other
+classes.
+
+Use the pattern when you can’t reuse a component in a different 
+program because it’s too dependent on other components.
+
+Use the Mediator when you find yourself creating tons of com-
+ponent subclasses just to reuse some basic behavior in various
+contexts.
+```
+
+#### Pros and Cons
+
+```
+Pros
+
+Single Responsibility Principle. You can extract the communica-
+tions between various components into a single place, making
+it easier to comprehend and maintain.
+
+Open/Closed Principle. You can introduce new mediators without having to change the actual components.
+
+You can reduce coupling between various components of a program.
+
+Cons
+
+Over time a mediator can evolve into a God Object.
+```
+
+### 5. Memento
+
+**Memento is a behavioral design pattern that lets you save and restore the previous state of an object without revealing the details of its implementation.**
+
+- Also known as Snapshot.
+- The Memento pattern delegates creating the state snapshots to the actual owner of that state, the *originator object.*
+- The pattern suggests storing the copy of the object’s state in a special object called *memento*.
+
+```
+The contents of the memento aren’t accessible to any other object except the one that
+produced it. Other objects must communicate with mementos using a limited interface which may allow fetching the
+snapshot’s metadata (creation time, the name of the performed
+operation, etc.), but not the original object’s state contained in the snapshot.
+```
+
+```
+Such a restrictive policy lets you store mementos inside other
+objects, usually called caretakers. Since the caretaker works
+with the memento only via the limited interface, it’s not able to
+tamper with the state stored inside the memento. At the same
+time, the originator has access to all fields inside the memen-
+to, allowing it to restore its previous state at will.
+```
+
+#### Structure using nested classes
+
+![image](./images/s7-5-01.png)
+
+1. The Originator class can produce snapshots of its own state, as
+well as restore its state from snapshots when needed.
+2. The Memento is a value object that acts as a snapshot of the
+originator’s state. It’s a common practice to make the **memento**
+**immutable** and pass it the data only once, via the constructor.
+3. The Caretaker knows not only “when” and “why” to capture the
+originator’s state, but also when the state should be restored.
+
+```
+A caretaker can keep track of the originator’s history by storing
+a stack of mementos. When the originator has to travel back in
+history, the caretaker fetches the topmost memento from the
+stack and passes it to the originator’s restoration method.
+```
+4. In this implementation, the memento class is nested inside the
+originator. This lets the originator access the fields and meth-
+ods of the memento, even though they’re declared private. On
+the other hand, the caretaker has very limited access to the
+memento’s fields and methods, which lets it store mementos
+in a stack but not tamper with their state.
+
+#### Structure with stricter encapsulation
+
+![image](./images/s7-5-02.png)
+
+```
+1.This implementation allows having multiple types of origina-
+tors and mementos. Each originator works with a correspond-
+ing memento class. Neither originators nor mementos expose
+their state to anyone.
+
+2.Caretakers are now explicitly restricted from changing the
+state stored in mementos. Moreover, the caretaker class
+becomes independent from the originator because the restora-
+tion method is now defined in the memento class.
+
+3.Each memento becomes linked to the originator that produced
+it. The originator passes itself to the memento’s constructor,
+along with the values of its state. Thanks to the close relation-
+ship between these classes, a memento can restore the state
+of its originator, given that the latter has defined the appropri-
+ate setters.
+```
+
+#### When to use memento
+
+```
+Use the Memento pattern when you want to produce snap-
+shots of the object’s state to be able to restore a previous state
+of the object.
+
+Use the pattern when direct access to the object’s fields/get-
+ters/setters violates its encapsulation.
+```
+
+#### Pros and Cons
+
+```
+Pros
+
+You can produce snapshots of the object’s state without violating its encapsulation.
+
+You can simplify the originator’s code by letting the caretaker
+maintain the history of the originator’s state.
+
+Cons
+
+The app might consume lots of RAM if clients create mementos too often.
+
+Caretakers should track the originator’s lifecycle to be able to destroy obsolete mementos.
+
+Most dynamic programming languages, such as PHP, Python and JavaScript, can’t guarantee that the state within the
+memento stays untouched.
+```
+
+### 6. Observer
+
+**Observer is a behavioral design pattern that lets you define a subscription mechanism to notify multiple objects about any events that happen to the object they’re observing.**
+
+- Messaging system based on the publisher-subscriber model.
+
+#### Structure
+
+![image](./images/s7-6-01.png)
+
+1. The Publisher issues events of interest to other objects. These
+events occur when the publisher changes its state or executes
+some behaviors. Publishers contain a subscription infrastruc-
+ture that lets new subscribers join and current subscribers
+leave the list.
+2. When a new event happens, the publisher goes over the sub-
+scription list and calls the notification method declared in the
+subscriber interface on each subscriber object.
+3. The Subscriber interface declares the notification interface. In
+most cases, it consists of a single update method. The method
+may have several parameters that let the publisher pass some
+event details along with the update.
+4. Concrete Subscribers perform some actions in response to
+notifications issued by the publisher. All of these classes must
+implement the same interface so the publisher isn’t coupled to
+concrete classes.
+5. Usually, subscribers need some contextual information to han-
+dle the update correctly. For this reason, publishers often pass
+some context data as arguments of the notification method.
+The publisher can pass itself as an argument, letting sub-
+scriber fetch any required data directly.
+6. The Client creates publisher and subscriber objects separately
+and then registers subscribers for publisher updates.
+
+- The subsciption can be added or removed dynamically, allowing for the relationship between objects to be changed at runtime.
+
+#### When to use observer pattern
+
+```
+Use the Observer pattern when changes to the state of one
+object may require changing other objects, and the actual set
+of objects is unknown beforehand or changes dynamically.
+
+Use the pattern when some objects in your app must observe
+others, but only for a limited time or in specific cases.
+```
+
+#### Pros and Cons
+
+```
+Pros:
+
+Open/Closed Principle. You can introduce new subscriber classes without having to change the publisher’s code (and vice versa if there’s a publisher interface).
+
+You can establish relations between objects at runtime.
+
+Cons:
+
+Subscribers are notified in random order.
+```
+
+### 7. State
+
+**State is a behavioral design pattern that lets an object alter its behavior when its internal state changes. It appears as if the object changed its class.**
+
+- Related to the concept of finite state machine
+- There's only a limited number of states that the object can exist in.
+- In each unique state, the object behaves differently.
+- The program can be switched from one state to another instantaneously. However, depending on a current state, the program may or may not switch to certain other states.
+- These switching rules, called *transitions*, are also finite and predetermined.
+- Implement each state as a separate class.
+- The *context* class has a reference to its current state, which is one of the defined state classes.
+
+```
+This structure may look similar to the Strategy pattern, but
+there’s one key difference. In the State pattern, the particular
+states may be aware of each other and initiate transitions from
+one state to another, whereas strategies almost never know
+about each other.
+```
+
