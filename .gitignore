@@ -1,2 +1,4 @@
 .mypy*
 __pycache__
+.venv
+.pytest*

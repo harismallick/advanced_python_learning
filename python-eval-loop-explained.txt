@@ -1,0 +1,120 @@
+while (true) {
+    instruction = fetch_next_opcode(frame);
+    switch (instruction.opcode) {
+        case LOAD_FAST:   ...
+        case BINARY_OP:   ...
+        case CALL:        ...
+        case RETURN_VALUE: ...
+        // ~150 more cases
+    }
+}
+```
+
+Every Python operation you write — an addition, a function call, an attribute lookup, a loop — maps to one or more of these cases. The loop runs until it hits a `RETURN_VALUE` instruction (or an unhandled exception).
+
+---
+
+### The frame object
+
+Before the loop can run, CPython creates a **frame object** (`PyFrameObject`). This is the fundamental unit of execution — one frame per function call. It contains everything needed to execute a block of code:
+```
+PyFrameObject
+├── f_code          → the code object (bytecode + constants + variable names)
+├── f_locals        → local variable storage (C array, not a dict)
+├── f_globals       → reference to the module's __dict__
+├── f_builtins      → reference to builtins.__dict__
+├── f_back          → pointer to the calling frame (forms the call stack)
+├── f_lasti         → index of last attempted instruction
+└── value stack     → where intermediate results live during computation
+```
+
+When your script starts, a frame is created for the module's top-level code. Every function call pushes a new frame; every return pops one. The chain of `f_back` pointers is what Python exposes as a traceback when an exception occurs.
+
+---
+
+### The value stack
+
+The CPython VM is **stack-based**, not register-based (unlike, say, Lua or the JVM's JIT output). All intermediate values during computation live on a stack embedded in the frame. Operations consume values from the top of the stack and push results back.
+
+A concrete example — `x = a + b`:
+```
+Bytecode:
+  LOAD_FAST    'a'      # push value of local 'a' onto stack
+  LOAD_FAST    'b'      # push value of local 'b' onto stack
+  BINARY_OP    +        # pop two values, push their sum
+  STORE_FAST   'x'      # pop top of stack, store in local 'x'
+
+Stack evolution:
+  []
+  [a]
+  [a, b]
+  [a+b]
+  []          ← x is now in the locals array
+```
+
+Every expression, no matter how complex, is decomposed into this push/pop dance. The stack never escapes the frame — it's a scratch space for computation in progress.
+
+---
+
+### What actually happens during execution of `script.py`
+
+When `script.py` starts, the top-level frame is entered and the loop begins processing its bytecode. For each instruction:
+
+**`LOAD_FAST` / `LOAD_GLOBAL` / `LOAD_CONST`** — push a value onto the stack. `LOAD_FAST` is a direct C array index (fastest). `LOAD_GLOBAL` does a dict lookup in `f_globals`, then `f_builtins` if not found. `LOAD_CONST` indexes into the code object's constant table.
+
+**`STORE_FAST` / `STORE_GLOBAL`** — pop the top of the stack and write it somewhere. `STORE_GLOBAL` writes into `f_globals` — this is what makes a module-level assignment actually mutate the module's `__dict__`.
+
+**`BINARY_OP`** — pops two objects, calls the appropriate dunder method (`__add__`, `__mul__`, etc.) on them via the C API, pushes the result. This is where Python's operator overloading happens — the VM doesn't know about types, it just dispatches to the object's method.
+
+**`CALL`** — this is the most complex instruction. It pops the callable and its arguments off the stack, then:
+1. Checks if the callable is a Python function — if so, creates a new frame and **recursively enters the evaluation loop** for that frame
+2. If it's a built-in C function, calls it directly without creating a Python frame
+3. Pushes the return value back onto the stack when done
+
+**`JUMP_*` instructions** — implement control flow. `JUMP_FORWARD`, `POP_JUMP_IF_FALSE`, `FOR_ITER` etc. move the instruction pointer rather than manipulating the stack. A `for` loop, `if` statement, `while` loop — all of these compile down to conditional and unconditional jumps.
+
+**`FOR_ITER`** — calls `__next__` on the iterator at the top of the stack. If it raises `StopIteration`, jumps past the loop body. Otherwise pushes the value and continues. This is the entire `for` loop mechanism.
+
+**Exception handling** — when any instruction raises an exception, the loop checks for an active `except` block by consulting an **exception table** (in CPython 3.11+, a separate structure; previously inline in the bytecode). If found, it jumps to the handler and pushes the exception onto the stack. If not found, it unwinds the frame, propagates the exception to `f_back`, and the calling frame's loop handles it.
+
+---
+
+### The GIL's role in the loop
+
+The GIL is not held continuously in a "locked forever" sense. CPython releases and reacquires it periodically — historically every 100 bytecode instructions (the "check interval"), now based on a configurable timeout (default 5ms since Python 3.2). At each check point the loop:
+
+1. Checks if another thread has requested the GIL
+2. If so, releases it, allowing another thread to enter the loop
+3. Reacquires it before continuing
+
+This is why Python threads can make progress despite the GIL — they take turns at the loop — but why CPU-bound threads don't truly parallelise: only one thread runs the evaluation loop at any moment.
+
+---
+
+### CPython 3.11+ — the specialising adaptive interpreter
+
+In 3.11, the evaluation loop was significantly redesigned. Opcodes can now **specialise themselves** at runtime based on observed types. The first time `LOAD_ATTR` executes on a particular object, it records the type. After enough repetitions, the generic `LOAD_ATTR` instruction in the bytecode is **replaced in-place** with a specialised variant like `LOAD_ATTR_SLOT` (direct memory offset, no dict lookup) or `LOAD_ATTR_MODULE` (single dict lookup with cached index).
+
+This is a form of inline caching — the loop is essentially doing lightweight JIT-style optimisation without a full JIT compiler. If the type changes (the assumption is violated), the instruction **de-specialises** back to the generic form. This is what gave CPython 3.11 its ~25% performance improvement over 3.10 without changing the language at all.
+
+---
+
+### The full picture
+```
+script.py module frame created
+    │
+    ▼
+Evaluation loop starts
+    │
+    ├── LOAD / STORE instructions → move values between stack and locals/globals
+    ├── BINARY_OP → dunder method dispatch on objects
+    ├── CALL → new frame pushed, loop recurses, return value pushed on return
+    ├── JUMP_* → control flow, implements if/for/while/try
+    ├── Exception raised → consult exception table, unwind or handle
+    └── RETURN_VALUE → exit loop, pop frame, return to caller
+    │
+    ▼
+Module frame returns
+    │
+    ▼
+Cleanup & exit
