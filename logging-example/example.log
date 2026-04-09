@@ -1,0 +1,32 @@
+2026-04-09 14:15:56,151:DEBUG:__main__:10 + 5 = 15
+2026-04-09 14:15:56,151:DEBUG:__main__:10 - 5 = 5
+2026-04-09 14:15:56,151:DEBUG:__main__:10 * 5 = 50
+2026-04-09 14:15:56,151:DEBUG:__main__:10 / 5 = 2.0
+2026-04-09 14:21:18,309:DEBUG:__main__:10 + 5 = 15
+2026-04-09 14:21:18,309:DEBUG:__main__:10 - 5 = 5
+2026-04-09 14:21:18,310:DEBUG:__main__:10 * 5 = 50
+2026-04-09 14:21:18,310:DEBUG:__main__:10 / 5 = 2.0
+2026-04-09 14:21:18,310:ERROR:__main__:Tried to divide by zero
+Traceback (most recent call last):
+  File "/home/harismallick/Documents/misc_work/advanced_python/logging-example/example.py", line 49, in divide
+    return x / y
+           ~~^~~
+ZeroDivisionError: division by zero
+2026-04-09 14:26:19,907:ERROR:__main__:Tried to divide by zero
+Traceback (most recent call last):
+  File "/home/harismallick/Documents/misc_work/advanced_python/logging-example/example.py", line 55, in divide
+    return x / y
+           ~~^~~
+ZeroDivisionError: division by zero
+2026-04-09 14:26:41,416:ERROR:__main__:Tried to divide by zero
+Traceback (most recent call last):
+  File "/home/harismallick/Documents/misc_work/advanced_python/logging-example/example.py", line 56, in divide
+    return x / y
+           ~~^~~
+ZeroDivisionError: division by zero
+2026-04-09 14:26:55,062:ERROR:__main__:Tried to divide by zero
+Traceback (most recent call last):
+  File "/home/harismallick/Documents/misc_work/advanced_python/logging-example/example.py", line 56, in divide
+    return x / y
+           ~~^~~
+ZeroDivisionError: division by zero
